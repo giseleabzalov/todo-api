@@ -3,9 +3,9 @@ import { FieldValue } from "firebase-admin/firestore";
 
 export function getAllTasks(req, res) {
     const db = getFirestoreInstance();
-    db.collection('tasks').sortBy('createdAt', 'desc').get()
+    db.collection('tasks').orderBy('createdAt', 'desc').get()
     .then(collection => {
-        const tasks = collection.docs.map(doc => ({ taskId: doc.Id, ...doc.data() }))
+        const tasks = collection.docs.map(doc => ({ taskId: doc.id, ...doc.data() }))
         res.send(tasks)
     })
     .catch((err => res.status(500).json({error: err.message})));
@@ -21,10 +21,18 @@ export async function addTask(req, res) {
 }
 
 export async function updateTask(req, res) {
-    const { done } = req.body;
-    const { taskId } =req.params;
+    const { task } = req.body;
+    const { taskId } = req.params;
     const db = await getFirestoreInstance();
-    db.collection('tasks').doc(taskId).update({ done })
+    db.collection('tasks').doc(taskId).update({ task })
+    .then(() => getAllTasks(req, res))
+    .catch(err => res.status(500).send({ error: err.message }));
+}
+
+export async function deleteTask(req, res) {
+    const { taskId } = req.params;
+    const db = await getFirestoreInstance();
+    db.collection('tasks').doc(taskId).delete()
     .then(() => getAllTasks(req, res))
     .catch(err => res.status(500).send({ error: err.message }));
 }
